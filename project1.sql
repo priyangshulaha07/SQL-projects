@@ -77,4 +77,10 @@ INSERT INTO Bills (visit_id, consultation_fee, medicine_charge, other_charge, to
 	JOIN Patients p ON v.patient_id = p.patient_id
 	JOIN Doctors d ON v.doctor_id = d.doctor_id
 	WHERE p.name = 'John Doe';
+	-- b. List all unpaid bills:
+	SELECT b.bill_id, p.name AS patient, b.total_amount
+	FROM Bills b
+	JOIN Visits v ON b.visit_id = v.visit_id
+	JOIN Patients p ON v.patient_id = p.patient_id
+	WHERE b.payment_status = 'Pending';
 
