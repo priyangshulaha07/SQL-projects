@@ -77,10 +77,49 @@ INSERT INTO Bills (visit_id, consultation_fee, medicine_charge, other_charge, to
 	JOIN Patients p ON v.patient_id = p.patient_id
 	JOIN Doctors d ON v.doctor_id = d.doctor_id
 	WHERE p.name = 'John Doe';
-	-- b. List all unpaid bills:
-	SELECT b.bill_id, p.name AS patient, b.total_amount
+    
+    SELECT b.bill_id, p.name AS patient, b.total_amount
 	FROM Bills b
 	JOIN Visits v ON b.visit_id = v.visit_id
 	JOIN Patients p ON v.patient_id = p.patient_id
 	WHERE b.payment_status = 'Pending';
+    
+--  4. Stored Procedures for Billing Calculation
+	DELIMITER //
+CREATE PROCEDURE CalculateBill(IN visit INT)
+BEGIN
+  UPDATE Bills
+  SET total_amount = consultation_fee + medicine_charge + other_charge
+  WHERE visit_id = visit;
+END //
+DELIMITER ;
+
+CALL CalculateBill(1);
+
+--  5. Triggers for Discharge & Status Updates
+DELIMITER //
+CREATE TRIGGER UpdateStatusAfterPayment
+AFTER UPDATE ON Bills
+FOR EACH ROW
+BEGIN
+  IF NEW.payment_status = 'Paid' THEN
+    UPDATE Visits
+    SET status = 'Discharged'
+    WHERE visit_id = NEW.visit_id;
+  END IF;
+END //
+DELIMITER ;
+DESC bills ;
+
+-- 6. Generate Visit Reports
+SELECT v.visit_date, p.name AS patient, d.name AS doctor, v.status
+FROM Visits v
+JOIN Patients p ON v.patient_id = p.patient_id
+JOIN Doctors d ON v.doctor_id = d.doctor_id
+WHERE v.visit_date = CURDATE();
+
+
+SELECT SUM(total_amount) AS total_revenue
+FROM Bills
+WHERE payment_status = 'Paid';
 
